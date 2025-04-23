@@ -7,7 +7,8 @@ class RecursiveNN(nn.Module):
         super(RecursiveNN, self).__init__()
         self.hidden_size = hidden_size
         self.input2h = nn.Linear(input_size, hidden_size)
-        self.combine_h = nn.Linear(hidden_size * 2, hidden_size)
+        self.left_h = nn.Linear(hidden_size, hidden_size)
+        self.right_h = nn.Linear(hidden_size, hidden_size)
         self.h2o = nn.Linear(hidden_size, output_size)
 
     def forward(self, tree):
@@ -16,12 +17,10 @@ class RecursiveNN(nn.Module):
         else:
             left = self.forward(tree[0])
             right = self.forward(tree[1])
-            combined = torch.cat((left, right), dim=1)
-            return torch.tanh(self.combine_h(combined))
+            combined = self.left_h(left) + self.right_h(right)
+            return torch.tanh(combined)
 
     def classify(self, tree):
         h = self.forward(tree)
         output = self.h2o(h)
         return F.log_softmax(output, dim=1)
-
-
